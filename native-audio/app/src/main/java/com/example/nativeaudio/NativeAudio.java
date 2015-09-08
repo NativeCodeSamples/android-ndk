@@ -16,13 +16,17 @@
 
 package com.example.nativeaudio;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -33,9 +37,12 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-public class NativeAudio extends Activity {
+public class NativeAudio extends Activity
+        implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     //static final String TAG = "NativeAudio";
+    private static final int AUDIO_ECHO_REQUEST = 0;
+    private Boolean permissionGranted = true;
 
     static final int CLIP_NONE = 0;
     static final int CLIP_HELLO = 1;
@@ -59,6 +66,8 @@ public class NativeAudio extends Activity {
         setContentView(R.layout.main);
 
         assetManager = getAssets();
+
+        requestResourcePermission();
 
         // initialize native audio system
         createEngine();
@@ -134,6 +143,9 @@ public class NativeAudio extends Activity {
         ((Button) findViewById(R.id.embedded_soundtrack)).setOnClickListener(new OnClickListener() {
             boolean created = false;
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 if (!created) {
                     created = createAssetAudioPlayer(assetManager, "background.mp3");
                 }
@@ -147,6 +159,9 @@ public class NativeAudio extends Activity {
         ((Button) findViewById(R.id.uri_soundtrack)).setOnClickListener(new OnClickListener() {
             boolean created = false;
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 if (!created && URI != null) {
                     created = createUriAudioPlayer(URI);
                 }
@@ -155,12 +170,19 @@ public class NativeAudio extends Activity {
 
         ((Button) findViewById(R.id.pause_uri)).setOnClickListener(new OnClickListener() {
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    // Log.e(TAG, "Error: requested permission not granted, please restart app and grant access");
+                    return;
+                }
                 setPlayingUriAudioPlayer(false);
              }
         });
 
         ((Button) findViewById(R.id.play_uri)).setOnClickListener(new OnClickListener() {
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 setPlayingUriAudioPlayer(true);
              }
         });
@@ -168,6 +190,9 @@ public class NativeAudio extends Activity {
         ((Button) findViewById(R.id.loop_uri)).setOnClickListener(new OnClickListener() {
             boolean isLooping = false;
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 isLooping = !isLooping;
                 setLoopingUriAudioPlayer(isLooping);
              }
@@ -270,6 +295,9 @@ public class NativeAudio extends Activity {
         ((Button) findViewById(R.id.record)).setOnClickListener(new OnClickListener() {
             boolean created = false;
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 if (!created) {
                     created = createAudioRecorder();
                 }
@@ -307,6 +335,35 @@ public class NativeAudio extends Activity {
     {
         shutdown();
         super.onDestroy();
+    }
+    private void requestResourcePermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                            Manifest.permission.RECORD_AUDIO,
+                            Manifest.permission.MODIFY_AUDIO_SETTINGS,
+                            Manifest.permission.INTERNET },
+                    AUDIO_ECHO_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+
+        /*
+         * if any permission failed, the sample could not play
+         */
+        if (AUDIO_ECHO_REQUEST != 0) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+
+        for (int res:grantResults) {
+            if (res != PackageManager.PERMISSION_GRANTED) {
+                permissionGranted = false;
+                return;
+            }
+        }
     }
 
     /** Native methods, implemented in jni folder */

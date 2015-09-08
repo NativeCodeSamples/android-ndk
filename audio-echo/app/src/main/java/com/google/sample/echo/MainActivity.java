@@ -16,17 +16,25 @@
 
 package com.google.sample.echo;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity
+        implements ActivityCompat.OnRequestPermissionsResultCallback {
     public static final String AUDIO_SAMPLE = "AUDIO_SAMPLE:";
+    private static final int AUDIO_ECHO_REQUEST = 0;
+    private Boolean permissionGranted = true;
+
     TextView status_view;
     String  nativeSampleRate;
     String  nativeSampleBufSize;
@@ -38,6 +46,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //get run-time permission...
+        requestResourcePermission();
         status_view = (TextView)findViewById(R.id.statusView);
         queryNativeAudioParameters();
 
@@ -80,7 +90,10 @@ public class MainActivity extends Activity {
     }
 
     public void startEcho(View view) {
-        status_view.setText("StartCapture Button Clicked\n");
+        if(!permissionGranted) {
+            updateNativeAudioUI();
+            return;
+        }
         if(isPlaying) {
             return;
         }
@@ -120,11 +133,46 @@ public class MainActivity extends Activity {
         nativeSampleFormat ="";    //TODO: find a way to get the native audio format
     }
     private void updateNativeAudioUI() {
-        status_view.setText("nativeSampleRate    = " + nativeSampleRate + "\n" +
-                "nativeSampleBufSize = " + nativeSampleBufSize + "\n" +
-                "nativeSampleFormat  = " + nativeSampleFormat);
-
+        if(permissionGranted) {
+            status_view.setText("nativeSampleRate    = " + nativeSampleRate + "\n" +
+                    "nativeSampleBufSize = " + nativeSampleBufSize + "\n" +
+                    "nativeSampleFormat  = " + nativeSampleFormat);
+        } else {
+            status_view.setText("Error: Resource Permission not Granted" +
+                                "could not record Audio\n"    +
+                                 "Please restart App and grant the necessary permissions");
+        }
     }
+    private void requestResourcePermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                            Manifest.permission.RECORD_AUDIO,
+                            Manifest.permission.MODIFY_AUDIO_SETTINGS,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE },
+                    AUDIO_ECHO_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+
+        /*
+         * if any permission failed, the sample could not play
+         */
+        if (AUDIO_ECHO_REQUEST != 0) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+
+        for (int res:grantResults) {
+            if (res != PackageManager.PERMISSION_GRANTED) {
+                permissionGranted = false;
+                return;
+            }
+        }
+    }
+
     /*
      * Loading our Libs
      */
