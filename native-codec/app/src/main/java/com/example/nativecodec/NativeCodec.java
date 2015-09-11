@@ -16,9 +16,13 @@
 
 package com.example.nativecodec;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -34,8 +38,11 @@ import android.widget.Spinner;
 
 import java.io.IOException;
 
-public class NativeCodec extends Activity {
+public class NativeCodec extends Activity
+        implements ActivityCompat.OnRequestPermissionsResultCallback {
     static final String TAG = "NativeCodec";
+    private static final int NATIVE_CODEC_REQUEST = 0;
+    private Boolean permissionGranted = true;
 
     String mSourceString = null;
 
@@ -157,7 +164,7 @@ public class NativeCodec extends Activity {
             public void onClick(View v) {
                 mRadio2.toggle();
             }
-      });
+        });
 
         // initialize button click handlers
 
@@ -166,6 +173,9 @@ public class NativeCodec extends Activity {
 
             @Override
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    return;
+                }
                 if (!mCreated) {
                     if (mNativeCodecPlayerVideoSink == null) {
                         if (mSelectedVideoSink == null) {
@@ -199,6 +209,7 @@ public class NativeCodec extends Activity {
 
         });
 
+        requestResourcePermission();
     }
 
     void switchSurface() {
@@ -314,6 +325,34 @@ public class NativeCodec extends Activity {
             s.release();
         }
 
+    }
+    private void requestResourcePermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE },
+                    NATIVE_CODEC_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+
+        /*
+         * if any permission failed, the sample could not play
+         */
+        if (NATIVE_CODEC_REQUEST!= requestCode) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+
+        for (int res:grantResults) {
+            if (res != PackageManager.PERMISSION_GRANTED) {
+                permissionGranted = false;
+                return;
+            }
+        }
     }
 
 }

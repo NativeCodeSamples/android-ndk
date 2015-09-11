@@ -16,10 +16,14 @@
 
 package com.example.nativemedia;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -33,6 +37,9 @@ import java.io.IOException;
 
 public class NativeMedia extends Activity {
     static final String TAG = "NativeMedia";
+
+    private static final int NATIVE_MEDIA_REQUEST = 0;
+    private Boolean permissionGranted = true;
 
     String mSourceString = null;
     String mSinkString = null;
@@ -210,6 +217,10 @@ public class NativeMedia extends Activity {
         ((Button) findViewById(R.id.start_java)).setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    Log.e(TAG, "Permission Error: external storage read permission is not granted");
+                    return;
+                }
                 if (mJavaMediaPlayerVideoSink == null) {
                     if (mSelectedVideoSink == null) {
                         return;
@@ -241,6 +252,10 @@ public class NativeMedia extends Activity {
 
             boolean created = false;
             public void onClick(View view) {
+                if(!permissionGranted) {
+                    Log.e(TAG, "Permission Error: external storage read permission is not granted");
+                    return;
+                }
                 if (!created) {
                     if (mNativeMediaPlayerVideoSink == null) {
                         if (mSelectedVideoSink == null) {
@@ -295,6 +310,7 @@ public class NativeMedia extends Activity {
 
         });
 
+        requestResourcePermission();
     }
 
     /** Called when the activity is about to be paused. */
@@ -404,4 +420,32 @@ public class NativeMedia extends Activity {
 
     }
 
+    private void requestResourcePermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE},
+                    NATIVE_MEDIA_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+
+        /*
+         * if any permission failed, the sample could not play
+         */
+        if (NATIVE_MEDIA_REQUEST != requestCode) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+
+        for (int res:grantResults) {
+            if (res != PackageManager.PERMISSION_GRANTED) {
+                permissionGranted = false;
+                return;
+            }
+        }
+    }
 }
