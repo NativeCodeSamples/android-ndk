@@ -41,7 +41,7 @@ public class NativeAudio extends Activity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     //static final String TAG = "NativeAudio";
-    private static final int AUDIO_ECHO_REQUEST = 0;
+    private static final int NATIVE_AUDIO_REQUEST = 0;
     private Boolean permissionGranted = true;
 
     static final int CLIP_NONE = 0;
@@ -341,7 +341,7 @@ public class NativeAudio extends Activity
                 PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.RECORD_AUDIO },
-                    AUDIO_ECHO_REQUEST);
+                    NATIVE_AUDIO_REQUEST);
         }
     }
 
@@ -352,7 +352,7 @@ public class NativeAudio extends Activity
         /*
          * if any permission failed, the sample could not play
          */
-        if (AUDIO_ECHO_REQUEST != requestCode) {
+        if (NATIVE_AUDIO_REQUEST != requestCode) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             return;
         }
