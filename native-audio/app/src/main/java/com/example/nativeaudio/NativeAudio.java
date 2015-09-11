@@ -339,10 +339,8 @@ public class NativeAudio extends Activity
     private void requestResourcePermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
                 PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{
-                            Manifest.permission.RECORD_AUDIO,
-                            Manifest.permission.MODIFY_AUDIO_SETTINGS,
-                            Manifest.permission.INTERNET },
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO },
                     AUDIO_ECHO_REQUEST);
         }
     }
@@ -354,8 +352,9 @@ public class NativeAudio extends Activity
         /*
          * if any permission failed, the sample could not play
          */
-        if (AUDIO_ECHO_REQUEST != 0) {
+        if (AUDIO_ECHO_REQUEST != requestCode) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
         }
 
         for (int res:grantResults) {
