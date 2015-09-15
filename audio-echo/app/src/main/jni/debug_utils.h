@@ -25,6 +25,7 @@
  *  Write given data to a file as binary file. File name is
  *     "/sdcard/data/audio_%d", file_index++
  *  requirement: must have /sdcard/data already created on android device
+ *               and request permission for WRITE_EXTERNAL_STORAGE
  */
 class Lock {
 public:
