@@ -89,9 +89,8 @@ public class MainActivity extends Activity
     }
 
     public void startEcho(View view) {
-        int permissionStatus = ActivityCompat.checkSelfPermission(this,
-                               Manifest.permission.RECORD_AUDIO);
-        if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                                               PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[] { Manifest.permission.RECORD_AUDIO },
@@ -156,14 +155,27 @@ public class MainActivity extends Activity
 
         if (grantResults.length != 1  ||
             grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            status_view.setText("Error: failed to get user permission for RECORD_AUDIO");
+            /*
+             * When user denied the permission, throw a Toast to prompt that RECORD_AUDIO
+             * is necessary; on UI, we display the current status as permission was denied so
+             * user know what is going on.
+             * This application go back to the original state: it behaves as if the button
+             * was not clicked. The assumption is that user will re-click the "start" button
+             * (to retry), or shutdown the app in normal way.
+             */
+            status_view.setText("Error: Permission for RECORD_AUDIO was denied");
             Toast.makeText(getApplicationContext(),
-                          "This sample needs RECORD_AUDIO permission",
+                           getString(R.string.NeedRecordAudioPermission),
                            Toast.LENGTH_SHORT)
                  .show();
             return;
         }
 
+        /*
+         * When permissions are granted, we prompt the user the status. User would
+         * re-try the "start" button to perform the normal operation. This saves us the extra
+         * logic in code for async processing of the button listener.
+         */
         status_view.setText("RECORD_AUDIO permission granted, touch " +
                              getString(R.string.StartEcho) + " to begin");
     }
