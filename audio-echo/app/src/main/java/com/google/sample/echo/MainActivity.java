@@ -154,14 +154,14 @@ public class MainActivity extends Activity
             return;
         }
 
-        for (int res:grantResults) {
-            if (res != PackageManager.PERMISSION_GRANTED) {
-                status_view.setText("Error: failed to get user permission for RECORD_AUDIO");
-                Toast.makeText(getApplicationContext(),
-                               "This Sample needs RECORD_AUDIO permission",
-                                Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (grantResults.length != 1  ||
+            grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            status_view.setText("Error: failed to get user permission for RECORD_AUDIO");
+            Toast.makeText(getApplicationContext(),
+                          "This sample needs RECORD_AUDIO permission",
+                           Toast.LENGTH_SHORT)
+                 .show();
+            return;
         }
 
         status_view.setText("RECORD_AUDIO permission granted, touch " +

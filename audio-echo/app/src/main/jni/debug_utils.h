@@ -20,13 +20,6 @@
 #include <string>
 
 
-/*
- * debug_write_file()
- *  Write given data to a file as binary file. File name is
- *     "/sdcard/data/audio_%d", file_index++
- *  requirement: must have /sdcard/data already created on android device
- *               and request permission for WRITE_EXTERNAL_STORAGE
- */
 class Lock {
 public:
     explicit Lock(std::recursive_mutex* mtx) {
@@ -58,6 +51,12 @@ private:
     std::string  fileName_;
 };
 
+/*
+ * debug_write_file()
+ *  Write given data to a file as binary file. File name is
+ *     "/sdcard/data/audio_%d", file_index++
+ *  requirement: must have /sdcard/data already created on android device
+ */
 void debug_write_file(void* buf, uint32_t size);
 
 #endif //NATIVE_AUDIO_DEBUG_UTILS_H
