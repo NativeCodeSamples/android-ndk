@@ -40,6 +40,8 @@
   <string name="record">Record</string>
   <string name="playback">Playback</string>
   <string name="app_name">NativeAudio</string>
+  <string name="NeedRecordAudioPermission">This sample needs RECORD_AUDIO permission</string>
+  <string name="RecordAudioPermissionGranted">Permission granted, Click Record to begin recording</string>
   <string-array name="uri_spinner_array">
     <item>http://upload.wikimedia.org/wikipedia/commons/6/6d/Banana.ogg</item>
     <item>http://www.freesound.org/data/previews/18/18765_18799-lq.mp3</item>

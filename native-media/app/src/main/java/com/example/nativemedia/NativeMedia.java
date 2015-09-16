@@ -33,13 +33,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Toast;
+
 import java.io.IOException;
 
 public class NativeMedia extends Activity {
     static final String TAG = "NativeMedia";
 
     private static final int NATIVE_MEDIA_REQUEST = 0;
-    private Boolean permissionGranted = true;
 
     String mSourceString = null;
     String mSinkString = null;
@@ -213,14 +214,19 @@ public class NativeMedia extends Activity {
         // initialize button click handlers
 
         // Java MediaPlayer start/pause
-
+        final Activity appActivity = this;
         ((Button) findViewById(R.id.start_java)).setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    Log.e(TAG, "Permission Error: external storage read permission is not granted");
+                // Request the READ_EXTERNAL_STORAGE permission
+                if (ActivityCompat.checkSelfPermission(appActivity, Manifest.permission.READ_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(appActivity, new String[]{
+                                    Manifest.permission.READ_EXTERNAL_STORAGE},
+                                    NATIVE_MEDIA_REQUEST);
                     return;
                 }
+
                 if (mJavaMediaPlayerVideoSink == null) {
                     if (mSelectedVideoSink == null) {
                         return;
@@ -252,8 +258,12 @@ public class NativeMedia extends Activity {
 
             boolean created = false;
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    Log.e(TAG, "Permission Error: external storage read permission is not granted");
+                // Request the READ_EXTERNAL_STORAGE permission
+                if (ActivityCompat.checkSelfPermission(appActivity, Manifest.permission.READ_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(appActivity, new String[]{
+                                    Manifest.permission.READ_EXTERNAL_STORAGE},
+                            NATIVE_MEDIA_REQUEST);
                     return;
                 }
                 if (!created) {
@@ -309,8 +319,6 @@ public class NativeMedia extends Activity {
             }
 
         });
-
-        requestResourcePermission();
     }
 
     /** Called when the activity is about to be paused. */
@@ -420,15 +428,6 @@ public class NativeMedia extends Activity {
 
     }
 
-    private void requestResourcePermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{
-                            Manifest.permission.READ_EXTERNAL_STORAGE},
-                    NATIVE_MEDIA_REQUEST);
-        }
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -441,11 +440,29 @@ public class NativeMedia extends Activity {
             return;
         }
 
-        for (int res:grantResults) {
-            if (res != PackageManager.PERMISSION_GRANTED) {
-                permissionGranted = false;
-                return;
-            }
+        if (grantResults.length != 1  ||
+                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            /*
+             * When user denied the permission, throw a Toast to prompt that READ_EXTERNAL_STORAGE
+             * is necessary;
+             * This application go back to the original state: it behaves as if the button
+             * was not clicked. The assumption is that user will re-click the "start" button
+             * (to retry), or shutdown the app in normal way.
+             */
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.NeedPermission),
+                    Toast.LENGTH_SHORT)
+                    .show();
+            return;
         }
+        /*
+         * When permissions are granted, prompt user with a toast and request user to re-click
+         * start button
+         */
+        Toast.makeText(getApplicationContext(),
+                getString(R.string.PermissionGranted),
+                Toast.LENGTH_SHORT)
+                .show();
+
     }
 }

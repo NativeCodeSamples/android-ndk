@@ -42,7 +42,6 @@ public class NativeAudio extends Activity
 
     //static final String TAG = "NativeAudio";
     private static final int NATIVE_AUDIO_REQUEST = 0;
-    private Boolean permissionGranted = true;
 
     static final int CLIP_NONE = 0;
     static final int CLIP_HELLO = 1;
@@ -66,8 +65,6 @@ public class NativeAudio extends Activity
         setContentView(R.layout.main);
 
         assetManager = getAssets();
-
-        requestResourcePermission();
 
         // initialize native audio system
         createEngine();
@@ -143,9 +140,6 @@ public class NativeAudio extends Activity
         ((Button) findViewById(R.id.embedded_soundtrack)).setOnClickListener(new OnClickListener() {
             boolean created = false;
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    return;
-                }
                 if (!created) {
                     created = createAssetAudioPlayer(assetManager, "background.mp3");
                 }
@@ -159,9 +153,6 @@ public class NativeAudio extends Activity
         ((Button) findViewById(R.id.uri_soundtrack)).setOnClickListener(new OnClickListener() {
             boolean created = false;
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    return;
-                }
                 if (!created && URI != null) {
                     created = createUriAudioPlayer(URI);
                 }
@@ -170,19 +161,12 @@ public class NativeAudio extends Activity
 
         ((Button) findViewById(R.id.pause_uri)).setOnClickListener(new OnClickListener() {
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    // Log.e(TAG, "Error: requested permission not granted, please restart app and grant access");
-                    return;
-                }
                 setPlayingUriAudioPlayer(false);
              }
         });
 
         ((Button) findViewById(R.id.play_uri)).setOnClickListener(new OnClickListener() {
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    return;
-                }
                 setPlayingUriAudioPlayer(true);
              }
         });
@@ -190,9 +174,6 @@ public class NativeAudio extends Activity
         ((Button) findViewById(R.id.loop_uri)).setOnClickListener(new OnClickListener() {
             boolean isLooping = false;
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    return;
-                }
                 isLooping = !isLooping;
                 setLoopingUriAudioPlayer(isLooping);
              }
@@ -254,7 +235,7 @@ public class NativeAudio extends Activity
                 }
                 Toast.makeText(NativeAudio.this, "Channels: " + numChannelsUri,
                         Toast.LENGTH_SHORT).show();
-             }
+            }
         });
 
         ((SeekBar) findViewById(R.id.volume_uri)).setOnSeekBarChangeListener(
@@ -278,27 +259,37 @@ public class NativeAudio extends Activity
         ((SeekBar) findViewById(R.id.pan_uri)).setOnSeekBarChangeListener(
                 new OnSeekBarChangeListener() {
             int lastProgress = 100;
+
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (BuildConfig.DEBUG && !(progress >= 0 && progress <= 100)) {
                     throw new AssertionError();
-                }               
+                }
                 lastProgress = progress;
             }
+
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
+
             public void onStopTrackingTouch(SeekBar seekBar) {
                 int permille = (lastProgress - 50) * 20;
                 setStereoPositionUriAudioPlayer(permille);
             }
         });
 
+        final Activity appActivity = this;
         ((Button) findViewById(R.id.record)).setOnClickListener(new OnClickListener() {
             boolean created = false;
+
             public void onClick(View view) {
-                if(!permissionGranted) {
-                    return;
-                }
                 if (!created) {
+                    if (ActivityCompat.checkSelfPermission(appActivity, Manifest.permission.RECORD_AUDIO) !=
+                            PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(
+                                appActivity,
+                                new String[]{Manifest.permission.RECORD_AUDIO},
+                                NATIVE_AUDIO_REQUEST);
+                        return;
+                    }
                     created = createAudioRecorder();
                 }
                 if (created) {
@@ -336,14 +327,6 @@ public class NativeAudio extends Activity
         shutdown();
         super.onDestroy();
     }
-    private void requestResourcePermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO },
-                    NATIVE_AUDIO_REQUEST);
-        }
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -357,12 +340,30 @@ public class NativeAudio extends Activity
             return;
         }
 
-        for (int res:grantResults) {
-            if (res != PackageManager.PERMISSION_GRANTED) {
-                permissionGranted = false;
-                return;
-            }
+        if (grantResults.length != 1  ||
+                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            /*
+             * When user denied the permission, throw a Toast to prompt that RECORD_AUDIO
+             * is necessary;
+             * This application go back to the original state: it behaves as if the button
+             * was not clicked. The assumption is that user will re-click the "start" button
+             * (to retry), or shutdown the app in normal way.
+             */
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.NeedRecordAudioPermission),
+                    Toast.LENGTH_SHORT)
+                    .show();
+            return;
         }
+
+        /*
+         * When permissions are granted, prompt user with a toast and request user to re-click
+         * record button
+         */
+        Toast.makeText(getApplicationContext(),
+                getString(R.string.RecordAudioPermissionGranted),
+                Toast.LENGTH_SHORT)
+                .show();
     }
 
     /** Native methods, implemented in jni folder */

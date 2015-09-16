@@ -35,6 +35,7 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.RadioButton;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -42,7 +43,6 @@ public class NativeCodec extends Activity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
     static final String TAG = "NativeCodec";
     private static final int NATIVE_CODEC_REQUEST = 0;
-    private Boolean permissionGranted = true;
 
     String mSourceString = null;
 
@@ -168,14 +168,22 @@ public class NativeCodec extends Activity
 
         // initialize button click handlers
 
+        final Activity appActivity = this;
         // native MediaPlayer start/pause
         ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                if(!permissionGranted) {
+                if (ActivityCompat.checkSelfPermission(appActivity, Manifest.permission.READ_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(appActivity, new String[] {
+                                    Manifest.permission.READ_EXTERNAL_STORAGE },
+                            NATIVE_CODEC_REQUEST);
+                    // Once we fired up permission request, we need wait for permission to be granted
+                    // and then ask user to re-try this play button.
                     return;
                 }
+
                 if (!mCreated) {
                     if (mNativeCodecPlayerVideoSink == null) {
                         if (mSelectedVideoSink == null) {
@@ -208,8 +216,6 @@ public class NativeCodec extends Activity
             }
 
         });
-
-        requestResourcePermission();
     }
 
     void switchSurface() {
@@ -326,33 +332,39 @@ public class NativeCodec extends Activity
         }
 
     }
-    private void requestResourcePermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{
-                            Manifest.permission.READ_EXTERNAL_STORAGE },
-                    NATIVE_CODEC_REQUEST);
-        }
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-
-        /*
-         * if any permission failed, the sample could not play
-         */
-        if (NATIVE_CODEC_REQUEST!= requestCode) {
+        if (NATIVE_CODEC_REQUEST != requestCode) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             return;
         }
 
-        for (int res:grantResults) {
-            if (res != PackageManager.PERMISSION_GRANTED) {
-                permissionGranted = false;
-                return;
-            }
+        if (grantResults.length != 1  ||
+                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            /*
+             * When user denied the permission, throw a Toast to prompt that READ_EXTERNAL_STORAGE
+             * is necessary;
+             * This application go back to the original state: it behaves as if the button
+             * was not clicked. The assumption is that user will re-click the "start" button
+             * (to retry), or shutdown the app in normal way.
+             */
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.NeedPermission),
+                    Toast.LENGTH_SHORT)
+                    .show();
+            return;
         }
+
+        /*
+         * When permissions are granted, prompt user with a toast and request user to re-click
+         * start button
+         */
+        Toast.makeText(getApplicationContext(),
+                getString(R.string.PermissionGranted),
+                Toast.LENGTH_SHORT)
+                .show();
     }
 
 }

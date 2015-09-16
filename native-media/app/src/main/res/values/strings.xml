@@ -25,4 +25,7 @@
         <item>SurfaceTexture 2</item>
     </string-array>
 
+    <string name="NeedPermission">This sample needs READ_EXTERNAL_STORAGE permission</string>
+    <string name="PermissionGranted">"READ_EXTERNAL_STORAGE granted, please click START to begin</string>
+
 </resources>
