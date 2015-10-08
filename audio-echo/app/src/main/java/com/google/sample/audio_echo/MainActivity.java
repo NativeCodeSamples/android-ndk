@@ -1,5 +1,7 @@
 package com.google.sample.audio_echo;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -8,9 +10,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity {
-
+    private TextView echoStatus;
+    String  sampleRate;
+    String  sampleBufSize;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,7 +33,23 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        hello_jni();
+        echoStatus = (TextView)findViewById(R.id.statusView);
+        ((ToggleButton) findViewById(R.id.toggleButton))
+        .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton view, boolean isChecked) {
+                if (isChecked) {
+                    echoStatus.setText("Echoing...");
+                } else {
+                    echoStatus.setText("Idle...");
+                }
+            }
+        });
+        AudioManager myAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        sampleRate  =  myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+        sampleBufSize = myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
+        echoStatus.setText("nativeSampleRate    = " + sampleRate + "\n" +
+                           "nativeSampleBufSize = " + sampleBufSize + "\n" +
+                           "status: idle");
     }
 
     @Override
@@ -55,5 +78,4 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("echo");
     }
 
-    public static native void hello_jni();
 }
