@@ -38,8 +38,10 @@ public class MainActivity extends AppCompatActivity {
         .setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton view, boolean isChecked) {
                 if (isChecked) {
+                    startEcho(Integer.parseInt(sampleRate), Integer.parseInt(sampleBufSize));
                     echoStatus.setText("Echoing...");
                 } else {
+                    stopEcho();
                     echoStatus.setText("Idle...");
                 }
             }
@@ -77,5 +79,6 @@ public class MainActivity extends AppCompatActivity {
     static {
         System.loadLibrary("echo");
     }
-
+    public static native void startEcho(int rate, int framesPerBuf);
+    public static native void stopEcho();
 }
