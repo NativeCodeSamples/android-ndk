@@ -50,8 +50,7 @@ void TeapotRenderer::Init()
     glFrontFace( GL_CCW );
 
     //Load shader
-    LoadShaders( &shader_param_, "Shaders/VS_ShaderPlain.vsh",
-            "Shaders/ShaderPlain.fsh" );
+    LoadShaders( &shader_param_);
 
     //Create Index buffer
     num_indices_ = sizeof(teapotIndices) / sizeof(teapotIndices[0]);
@@ -196,9 +195,7 @@ void TeapotRenderer::Render()
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 }
 
-bool TeapotRenderer::LoadShaders( SHADER_PARAMS* params,
-        const char* strVsh,
-        const char* strFsh )
+bool TeapotRenderer::LoadShaders( SHADER_PARAMS* params)
 {
     GLuint program;
     GLuint vert_shader, frag_shader;
@@ -209,21 +206,33 @@ bool TeapotRenderer::LoadShaders( SHADER_PARAMS* params,
     LOGI( "Created Shader %d", program );
 
     // Create and compile vertex shader
-    if( !ndk_helper::shader::CompileShader( &vert_shader, GL_VERTEX_SHADER, strVsh ) )
-    {
-        LOGI( "Failed to compile vertex shader" );
-        glDeleteProgram( program );
-        return false;
-    }
+    const GLchar* vert_src_teapot = returnVertexSrc();
 
-    // Create and compile fragment shader
-    if( !ndk_helper::shader::CompileShader( &frag_shader, GL_FRAGMENT_SHADER, strFsh ) )
-    {
-        LOGI( "Failed to compile fragment shader" );
-        glDeleteProgram( program );
-        return false;
-    }
+    const GLchar* frag_src_teapot = returnFramentSrc();
 
+
+  vert_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vert_shader, 1, &vert_src_teapot, NULL);
+  glCompileShader(vert_shader);
+
+  GLint status = NULL;
+
+  glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &status);
+  if(!status)
+  {
+    LOGE("Failed to compile vertex shader.");
+  }
+
+  frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(frag_shader, 1, &frag_src_teapot, NULL);
+  glCompileShader(frag_shader);
+
+  glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &status);
+
+  if(!status)
+  {
+    LOGE("Failed compile Fragment shader.");
+  }
     // Attach vertex shader to program
     glAttachShader( program, vert_shader );
 
@@ -276,6 +285,14 @@ bool TeapotRenderer::LoadShaders( SHADER_PARAMS* params,
 
     params->program_ = program;
     return true;
+}
+
+const char *TeapotRenderer::returnVertexSrc() {
+    return vert_shader_src_p;
+}
+
+const char *TeapotRenderer::returnFramentSrc() {
+    return frag_shader_src_p;
 }
 
 bool TeapotRenderer::Bind( ndk_helper::TapCamera* camera )
