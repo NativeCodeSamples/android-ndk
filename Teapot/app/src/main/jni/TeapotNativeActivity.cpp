@@ -437,7 +437,7 @@ void android_main( android_app* state )
     g_engine.SetState( state );
 
     //Init helper functions
-    ndk_helper::JNIHelper::Init( state->activity, HELPER_CLASS_NAME );
+    //ndk_helper::JNIHelper::Init( state->activity, HELPER_CLASS_NAME );
 
     state->userData = &g_engine;
     state->onAppCmd = Engine::HandleCmd;
